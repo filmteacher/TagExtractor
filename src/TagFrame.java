@@ -1,22 +1,20 @@
 import javax.swing.*;
-        import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-        import java.awt.event.ActionEvent;
-import java.io.File;
-import java.io.IOException;
+import java.awt.event.ActionEvent;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-        import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 /*
 / Comp Programming II - Lab08 - Tag Extractor
 / @author Matt Bennett
+/ Some code from CP_II_M08_Stream_Processing-master by Tom Wulf refactored
 */
 
 public class TagFrame extends JFrame
@@ -44,7 +42,7 @@ public class TagFrame extends JFrame
     int marginSize = 15;
 
     public static Set<String> stopWords = new TreeSet<>();
-    public static Set<String> keySet = new TreeSet<>();
+    public static TreeMap<String, Integer> countMap = new TreeMap<>();
 
     public TagFrame()
     {
@@ -87,7 +85,7 @@ public class TagFrame extends JFrame
     private void createFilesPnl() {
         filesPnl = new JPanel();
         filesPnl.setLayout(new GridLayout(2, 2));
-        filesPnl.setBackground(Color.WHITE);
+        filesPnl.setBackground(Color.LIGHT_GRAY);
         filesPnl.setPreferredSize(new Dimension(360, 80));
 
         stopFld = new JTextField();
@@ -116,15 +114,15 @@ public class TagFrame extends JFrame
             }
             else
             {
-                resultsArea.append("Must choose a Stop Words file to proceed.");
+                resultsArea.append("Must choose a Stop Words file to proceed.\n");
             }
 
             if(stopWords.isEmpty()) {
-                resultsArea.append("Error: Stop Words file is empty. Choose another.");
+                resultsArea.append("Error: Stop Words file is empty. Choose another.\n");
             }
             else
             {
-                resultsArea.append("Stop Words file loaded.");
+                resultsArea.append("Stop Words file loaded.\n");
             }
         });
 
@@ -135,8 +133,6 @@ public class TagFrame extends JFrame
         {
             JFileChooser chooser = new JFileChooser();
             File selectedFile;
-
-            TreeMap<String, Integer> countMap = new TreeMap<>();
             File workingDirectory = new File(System.getProperty("user.dir"));
 
             chooser.setCurrentDirectory(workingDirectory);
@@ -176,7 +172,7 @@ public class TagFrame extends JFrame
             }
             else
             {
-                resultsArea.append("Must choose a literature file to process.");
+                resultsArea.append("Must choose a literature file to process.\n");
             }
         });
 
@@ -198,40 +194,49 @@ public class TagFrame extends JFrame
         resultsArea.setLineWrap(true);
         resultsArea.setWrapStyleWord(true);
         resultsScroller = new JScrollPane(resultsArea);
-        resultsScroller.setBorder(new TitledBorder(new EtchedBorder(), "Tags/Keywords:"));
+        resultsScroller.setBorder(new TitledBorder(new EtchedBorder(), "Tags/Counts:"));
         textPnl.add(resultsScroller);
     }
 
     private void createButtonsPnl() {
         buttonsPnl = new JPanel();
         buttonsPnl.setLayout(new GridLayout(1, 2));
-        buttonsPnl.setBackground(Color.WHITE);
+        buttonsPnl.setBackground(Color.LIGHT_GRAY);
         buttonsPnl.setPreferredSize(new Dimension(360, 40));
 
         saveBtn = new JButton("SAVE results");
-//    saveBtn.addActionListener((ActionEvent ae) ->
-//    {
-//        JFileChooser chooser = new JFileChooser();
-//
-//        File workingDirectory = new File(System.getProperty("user.dir"));
-//
-//        chooser.setCurrentDirectory(workingDirectory);
-//
-//        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-//            this.selectedFile = chooser.getSelectedFile();
-//            Path file = selectedFile.toPath();
-//
-//            originalArea.setText("");
-//
-//            try (Stream<String> lines = Files.lines(file))
-//            {
-//                lines
-//                        .forEach(l -> originalArea.append(l + "\n"));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    });
+        saveBtn.addActionListener((ActionEvent ae) ->
+        {
+            JFileChooser saveChooser = new JFileChooser();
+            saveChooser.setDialogTitle("Specify a file to save the data");
+            saveChooser.setSelectedFile(new File("keywords.txt"));
+
+            int userSelection = saveChooser.showSaveDialog(this);
+
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = saveChooser.getSelectedFile();
+                String filePath = fileToSave.getAbsolutePath();
+
+            try
+            {
+                OutputStream out =
+                        new BufferedOutputStream(Files.newOutputStream(fileToSave.toPath(), CREATE));
+                BufferedWriter writer =
+                        new BufferedWriter(new OutputStreamWriter(out));
+
+                for (Map.Entry<String, Integer> entry : countMap.entrySet())
+                {
+                    writer.write(entry.getKey() + ": " + entry.getValue() + "\n");
+                }
+
+                writer.close(); // must close the file to seal it and flush buffer
+                resultsArea.append("Data file written!\n");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    });
 
         quitBtn = new JButton("QUIT the app");
         quitBtn.addActionListener((ActionEvent ae) ->
