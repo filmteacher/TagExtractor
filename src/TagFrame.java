@@ -207,7 +207,10 @@ public class TagFrame extends JFrame
         saveBtn = new JButton("SAVE results");
         saveBtn.addActionListener((ActionEvent ae) ->
         {
-            JFileChooser saveChooser = new JFileChooser();
+            String currentDirPath = System.getProperty("user.dir");
+            File currentDir = new File(currentDirPath);
+
+            JFileChooser saveChooser = new JFileChooser(currentDir);
             saveChooser.setDialogTitle("Specify a file to save the data");
             saveChooser.setSelectedFile(new File("keywords.txt"));
 
